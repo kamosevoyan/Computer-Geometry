@@ -26,7 +26,7 @@ def polygonal_chain(points, density=100):
 
     mask = numpy.array([[i, i + 1] for i in range(points.shape[0] - 1)])
   
-    t = numpy.linspace(0, 1, density)	
+    t = numpy.linspace(0, 1, density)
     T = numpy.stack([1 - t, t])  
     
     POINTS = (points[mask].transpose(2, 0, 1) @ T).reshape(2, -1)
@@ -194,4 +194,4 @@ def besier_curve(points, density=100):
         
         result += bershtein_basis(n - 1, i, t)[..., None] * P
         
-    return result
+    return result.T
