@@ -161,7 +161,7 @@ def cubic_spline(points, edge_0=None, edge_1=None, edge_type="second", density=1
 
     return POINTS
 
-def besier_curve(points, density=100):
+def besier_curve(points, weights=None, density=100):
     
     ################################################
     def bershtein_basis(n, i, t):
@@ -183,6 +183,15 @@ def besier_curve(points, density=100):
 
     if not (0 < density <= 1000):
         raise ValueError(f"expected density to be in range (0, 1000], but got value {density}")
+        
+    if weights is not None:
+        if not isinstance(weights, numpy.ndarray):
+            raise TypeError(f"expected weights to be numpy.ndarray type, but got {type(points)}")
+    
+        if not (weights.ndim == 1):
+            raise ValueError(f"expected weights to have shape [N], but got {points.shape}")
+    else:
+        weights = numpy.ones(points.shape[0])
 
         
     t = numpy.linspace(0, 1, density)
@@ -192,6 +201,16 @@ def besier_curve(points, density=100):
     
     for i, P in enumerate(points):
         
-        result += bershtein_basis(n - 1, i, t)[..., None] * P
+        result += weights[i] * bershtein_basis(n - 1, i, t)[..., None] * P
+        
+    if weights is not None:
+        
+        denom = numpy.zeros(t.shape[0])
+        
+        for i, P in enumerate(weights):
+            
+            denom += weights[i] * bershtein_basis(n - 1, i, t)
+         
+        result = result /  denom[..., None]
         
     return result.T
