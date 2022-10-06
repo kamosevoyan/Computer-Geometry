@@ -166,7 +166,7 @@ def besier_curve(points, weights=None, density=100):
     ################################################
     def bershtein_basis(n, i, t):
     
-        C_n_i = numpy.math.factorial(n)/(numpy.math.factorial(i)*numpy.math.factorial(n - i))
+        C_n_i = numpy.math.factorial(n)/(numpy.math.factorial(i) * numpy.math.factorial(n - i))
     
         return C_n_i * t ** i * (1 - t) ** (n - i)
     
@@ -191,7 +191,7 @@ def besier_curve(points, weights=None, density=100):
         if not (weights.ndim == 1):
             raise ValueError(f"expected weights to have shape [N], but got {points.shape}")
     else:
-        weights = numpy.ones(points.shape[0])
+        weights = numpy.ones(points.shape[0], dtype=float)
 
         
     t = numpy.linspace(0, 1, density)
@@ -205,7 +205,7 @@ def besier_curve(points, weights=None, density=100):
         
     if weights is not None:
         
-        denom = numpy.zeros(t.shape[0])
+        denom = numpy.zeros(t.shape[0], dtype=float)
         
         for i, P in enumerate(weights):
             
@@ -214,3 +214,24 @@ def besier_curve(points, weights=None, density=100):
         result = result /  denom[..., None]
         
     return result.T
+
+def add_one_point(old_points):
+    
+    if not isinstance(old_points, numpy.ndarray):
+        raise TypeError(f"expected old_points to be numpy.ndarray type, but got {type(points)}")
+    
+    if not (old_points.shape[1] == 2) or not (old_points.ndim == 2):
+        raise ValueError(f"expected old_points shape to be [N, 2], but got {points.shape}")
+
+    n = old_points.shape[0]
+    new_points = numpy.zeros((n + 1, 2), dtype=float)
+    
+    new_points[0] = old_points[0]
+    
+    for i, value in enumerate(old_points[1:], 1):
+        
+        new_points[i] = (n - i) / (n) * old_points[i] + i / (n) * old_points[i - 1]
+        
+    new_points[-1] = old_points[-1]
+    
+    return new_points
