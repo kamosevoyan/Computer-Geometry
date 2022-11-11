@@ -24,15 +24,43 @@ def norm_bspline(i, m, T, x):
 
 def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=True):
 
+    if not isinstance(split, bool):
+        raise TypeError(f"Expected split to be bool, but got {type(split)}")
+
+    if not isinstance(density, int):
+        raise TypeError(f"Expected density to be int, but got {type(density)}")
+    if not (20 <= density <= 1000):
+        raise ValueError(f"Expected density to be in range [20, 1000], but got {density}")
+
+    if not isinstance(points, numpy.ndarray):
+        raise TypeError(f"Expected points to be numpy array, but got {type(points)}")
+
+    if not ((points.ndim == 2) and (points.shape[1] == 2)):
+        raise ValueError(f"Expected points shape to be [N, 2], but got {points.shape}")
+
     if weights is None:
         weights = numpy.ones(points.shape[0])
+    else:
+        if not isinstance(weights, numpy.ndarray):
+            raise TypeError(f"Expected weights to be numpy array, but got {type(weights)}")
+        if weights.shape[0] != points.shape[0]:
+            raise ValueError(f"Expectes points and weights to have sampe last shape, but got {points.shape} and {weights.shape}")
 
+    #Pad points insead of multiple nodes to escape zero division
     new_points  = numpy.concatenate([[points[0]]*(degree), points[1:-1], [points[-1]]*(degree)])
     new_weights = numpy.concatenate([[weights[0]]*(degree), weights[1:-1], [weights[-1]]*(degree)])
 
     if nodes is None:
         nodes = numpy.arange(new_points.shape[0]+degree)
-
+    else:
+        if not isinstance(nodes, numpy.ndarray):
+            raise TypeError(f"Expected nodes to be numpy array, but got {type(nodes)}")
+        if nodes.ndim != 1:
+            raise ValueError(f"Expected nodes shape to be [N], but got {nodes.shape}")
+        if not numpy.all(nodes[1:] > nodes[:-1]):
+            raise ValueError("Expected nodes to be non strict increasing sequence")
+        if nodes.shape[0] != new_points.shape[0] + degree:
+            raise ValueError(f"Expected node.shape = points.shape + degree")
 
     num = nodes.shape[0] - 2 * degree
     x = numpy.linspace(nodes[degree], nodes[-degree], num=density * num)
