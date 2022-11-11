@@ -81,7 +81,7 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
         for x, y in zip(X, Y):
             plt.plot(x, y)
 
-        plt.plot(points[:, 0], points[:, 1])
+        plt.plot(points[:, 0], points[:, 1], color="k")
 
     else:
         plt.plot(result[0], result[1])
