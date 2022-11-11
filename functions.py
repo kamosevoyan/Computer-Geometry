@@ -1,4 +1,65 @@
 import numpy
+import matplotlib.pyplot as plt
+
+def sigma(m, r, t=0):
+
+    zeros = numpy.zeros(r.shape[0])
+
+    return numpy.maximum(r - t, zeros)**m
+
+def sigma_diff(nodes, x):
+
+    result = numpy.zeros(x.shape[0])
+    indices = numpy.arange(nodes.shape[0])
+
+    for j, _ in enumerate(nodes):
+        denom = (nodes[j] - nodes[indices != j]).prod()
+        result += sigma(nodes.shape[0] - 2, nodes[j] - x)/denom
+
+    return result
+
+def norm_bspline(i, m, T, x):
+
+    return (T[i+m] - T[i]) * sigma_diff(T[i:(i + m + 1)], x)
+
+def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=True):
+
+    if weights is None:
+        weights = numpy.ones(points.shape[0])
+
+    new_points  = numpy.concatenate([[points[0]]*(degree), points[1:-1], [points[-1]]*(degree)])
+    new_weights = numpy.concatenate([[weights[0]]*(degree), weights[1:-1], [weights[-1]]*(degree)])
+
+    if nodes is None:
+        nodes = numpy.arange(new_points.shape[0]+degree)
+
+
+    num = nodes.shape[0] - 2 * degree
+    x = numpy.linspace(nodes[degree], nodes[-degree], num=density * num)
+
+    result = numpy.zeros((2, x.shape[0]))
+
+    for index, _ in enumerate(new_points):
+        result += new_weights[index] * new_points[index][..., None] * norm_bspline(index, degree, nodes, x)
+
+    #Define figure to plot to
+    plt.figure(figsize=(10, 10))
+    plt.axis("equal")
+
+    if split is True:
+        X = numpy.split(result[0], num)
+        Y = numpy.split(result[1], num)
+
+        for x, y in zip(X, Y):
+            plt.plot(x, y)
+
+        plt.plot(points[:, 0], points[:, 1])
+
+    else:
+        plt.plot(result[0], result[1])
+
+    plt.scatter(points[:, 0], points[:, 1], c="r")
+    plt.show()
 
 def norm(x):
     
