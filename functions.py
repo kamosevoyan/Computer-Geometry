@@ -34,14 +34,15 @@ def construct_curve(new_points, new_weights, nodes, degree, density):
 
     return result, num
 
-def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=True):
+def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=True, cascade=False):
 
     if not isinstance(degree, (int, list)):
         raise TypeError(f"Expected degree to be int or list of ints, but got {type(degree)}")
+
     if isinstance(degree, int):
         degree = [degree]
 
-    if isinstance(degree, list) and (nodes is not None):
+    if (len(degree) > 1) and (nodes is not None):
         raise NotImplementedError(f"Multiple degrees with non default nodes are not available")
 
     if not all(isinstance(num, int) and (2 <= num) for num in degree):
@@ -49,6 +50,9 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
 
     if not isinstance(split, bool):
         raise TypeError(f"Expected split to be bool, but got {type(split)}")
+
+    if not isinstance(cascade, bool):
+        raise TypeError(f"Expected cascade to be bool, but got {type(cascade)}")
 
     if not isinstance(density, int):
         raise TypeError(f"Expected density to be int, but got {type(density)}")
@@ -100,12 +104,13 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
             Y = numpy.split(result[1], num)
 
             for x, y in zip(X, Y):
-                plt.plot(x, y)
+                plt.plot(x, y, linewidth=3)
 
-            plt.plot(points[:, 0], points[:, 1], color="k")
+            if cascade is True:
+                plt.plot(points[:, 0], points[:, 1], color="k", linewidth=0.5)
 
         else:
-            plt.plot(result[0], result[1], label=f"{deg}")
+            plt.plot(result[0], result[1], label=f"{deg}", linewidth=3)
             plt.legend()
 
         plt.scatter(points[:, 0], points[:, 1], c="r")
