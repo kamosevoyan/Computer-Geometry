@@ -22,7 +22,7 @@ def norm_bspline(i, m, T, x):
 
     return (T[i+m] - T[i]) * sigma_diff(T[i:(i + m + 1)], x)
 
-def costruct_curve(new_points, new_weights, nodes, degree, density):
+def construct_curve(new_points, new_weights, nodes, degree, density):
 
     num = nodes.shape[0] - 2 * degree
     x = numpy.linspace(nodes[degree], nodes[-degree], num=density * num)
@@ -91,7 +91,7 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
             if new_nodes.shape[0] != new_points.shape[0] + deg:
                 raise ValueError(f"Expected node.shape = points.shape + degree")
 
-        result, num = costruct_curve(new_points, new_weights, new_nodes, deg, density)
+        result, num = construct_curve(new_points, new_weights, new_nodes, deg, density)
         #Define figure to plot to
 
         if split is True:
