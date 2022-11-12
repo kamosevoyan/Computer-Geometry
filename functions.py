@@ -79,19 +79,27 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
 
     for deg in degree:
         #Pad points insead of multiple nodes to escape zero division
-        new_points  = numpy.concatenate([[points[0]]*(deg), points[1:-1], [points[-1]]*(deg)])
-        new_weights = numpy.concatenate([[weights[0]]*(deg), weights[1:-1], [weights[-1]]*(deg)])
+        new_points  = numpy.concatenate([[points[0]]*deg, points[1:-1], [points[-1]]*deg])
+        new_weights = numpy.concatenate([[weights[0]]*deg, weights[1:-1], [weights[-1]]*deg])
 
         if nodes is None:
             new_nodes = numpy.arange(new_points.shape[0]+deg)
         else:
-            new_nodes = nodes
-            if not isinstance(new_nodes, numpy.ndarray):
-                raise TypeError(f"Expected nodes to be numpy array, but got {type(new_nodes)}")
-            if new_nodes.ndim != 1:
-                raise ValueError(f"Expected nodes shape to be [N], but got {new_nodes.shape}")
-            if not numpy.all(new_nodes[1:] > new_nodes[:-1]):
+            if not isinstance(nodes, numpy.ndarray):
+                raise TypeError(f"Expected nodes to be numpy array, but got {type(nodes)}")
+            if nodes.ndim != 1:
+                raise ValueError(f"Expected nodes shape to be [N], but got {nodes.shape}")
+            if not numpy.all(nodes[1:] > nodes[:-1]):
                 raise ValueError("Expected nodes to be non strict increasing sequence")
+
+            left_count = deg // 2
+            right_count = deg // 2 + (deg % 2)
+
+            left_pad_nodes = numpy.linspace(nodes[0]-1, nodes[0], deg+left_count)
+            right_pad_nodes = numpy.linspace(nodes[-1], nodes[-1]+1, deg+right_count)
+
+            new_nodes = numpy.concatenate([left_pad_nodes, nodes[1:-1], right_pad_nodes])
+
             if new_nodes.shape[0] != new_points.shape[0] + deg:
                 raise ValueError(f"Expected node.shape = points.shape + degree")
 
