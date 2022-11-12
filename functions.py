@@ -22,14 +22,37 @@ def norm_bspline(i, m, T, x):
 
     return (T[i+m] - T[i]) * sigma_diff(T[i:(i + m + 1)], x)
 
+def costruct_curve(new_points, new_weights, nodes, degree, density):
+
+    num = nodes.shape[0] - 2 * degree
+    x = numpy.linspace(nodes[degree], nodes[-degree], num=density * num)
+
+    result = numpy.zeros((2, x.shape[0]))
+
+    for index, _ in enumerate(new_points):
+        result += new_weights[index] * new_points[index][..., None] * norm_bspline(index, degree, nodes, x)
+
+    return result, num
+
 def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=True):
+
+    if not isinstance(degree, (int, list)):
+        raise TypeError(f"Expected degree to be int or list of ints, but got {type(degree)}")
+    if isinstance(degree, int):
+        degree = [degree]
+
+    if isinstance(degree, list) and (nodes is not None):
+        raise NotImplementedError(f"Multiple degrees with non default nodes are not available")
+
+    if not all(isinstance(num, int) and (2 <= num) for num in degree):
+        raise ValueError(f"Expected degree to be list of integers greater or equal than 2")
 
     if not isinstance(split, bool):
         raise TypeError(f"Expected split to be bool, but got {type(split)}")
 
     if not isinstance(density, int):
         raise TypeError(f"Expected density to be int, but got {type(density)}")
-    if not (20 <= density <= 1000):
+    if not (5 <= density <= 1000):
         raise ValueError(f"Expected density to be in range [20, 1000], but got {density}")
 
     if not isinstance(points, numpy.ndarray):
@@ -46,47 +69,47 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
         if weights.shape[0] != points.shape[0]:
             raise ValueError(f"Expectes points and weights to have sampe last shape, but got {points.shape} and {weights.shape}")
 
-    #Pad points insead of multiple nodes to escape zero division
-    new_points  = numpy.concatenate([[points[0]]*(degree), points[1:-1], [points[-1]]*(degree)])
-    new_weights = numpy.concatenate([[weights[0]]*(degree), weights[1:-1], [weights[-1]]*(degree)])
 
-    if nodes is None:
-        nodes = numpy.arange(new_points.shape[0]+degree)
-    else:
-        if not isinstance(nodes, numpy.ndarray):
-            raise TypeError(f"Expected nodes to be numpy array, but got {type(nodes)}")
-        if nodes.ndim != 1:
-            raise ValueError(f"Expected nodes shape to be [N], but got {nodes.shape}")
-        if not numpy.all(nodes[1:] > nodes[:-1]):
-            raise ValueError("Expected nodes to be non strict increasing sequence")
-        if nodes.shape[0] != new_points.shape[0] + degree:
-            raise ValueError(f"Expected node.shape = points.shape + degree")
-
-    num = nodes.shape[0] - 2 * degree
-    x = numpy.linspace(nodes[degree], nodes[-degree], num=density * num)
-
-    result = numpy.zeros((2, x.shape[0]))
-
-    for index, _ in enumerate(new_points):
-        result += new_weights[index] * new_points[index][..., None] * norm_bspline(index, degree, nodes, x)
-
-    #Define figure to plot to
     plt.figure(figsize=(10, 10))
     plt.axis("equal")
 
-    if split is True:
-        X = numpy.split(result[0], num)
-        Y = numpy.split(result[1], num)
+    for deg in degree:
+        #Pad points insead of multiple nodes to escape zero division
+        new_points  = numpy.concatenate([[points[0]]*(deg), points[1:-1], [points[-1]]*(deg)])
+        new_weights = numpy.concatenate([[weights[0]]*(deg), weights[1:-1], [weights[-1]]*(deg)])
 
-        for x, y in zip(X, Y):
-            plt.plot(x, y)
+        if nodes is None:
+            new_nodes = numpy.arange(new_points.shape[0]+deg)
+        else:
+            new_nodes = nodes
+            if not isinstance(new_nodes, numpy.ndarray):
+                raise TypeError(f"Expected nodes to be numpy array, but got {type(new_nodes)}")
+            if new_nodes.ndim != 1:
+                raise ValueError(f"Expected nodes shape to be [N], but got {new_nodes.shape}")
+            if not numpy.all(new_nodes[1:] > new_nodes[:-1]):
+                raise ValueError("Expected nodes to be non strict increasing sequence")
+            if new_nodes.shape[0] != new_points.shape[0] + deg:
+                raise ValueError(f"Expected node.shape = points.shape + degree")
 
-        plt.plot(points[:, 0], points[:, 1], color="k")
+        result, num = costruct_curve(new_points, new_weights, new_nodes, deg, density)
+        #Define figure to plot to
 
-    else:
-        plt.plot(result[0], result[1])
+        if split is True:
 
-    plt.scatter(points[:, 0], points[:, 1], c="r")
+            X = numpy.split(result[0], num)
+            Y = numpy.split(result[1], num)
+
+            for x, y in zip(X, Y):
+                plt.plot(x, y)
+
+            plt.plot(points[:, 0], points[:, 1], color="k")
+
+        else:
+            plt.plot(result[0], result[1], label=f"{deg}")
+            plt.legend()
+
+        plt.scatter(points[:, 0], points[:, 1], c="r")
+
     plt.show()
 
 def norm(x):
