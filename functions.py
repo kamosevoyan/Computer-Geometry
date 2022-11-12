@@ -286,16 +286,13 @@ def cubic_spline(points, edge_0=None, edge_1=None, edge_type="second", density=1
 
     return POINTS
 
+def bershtein_basis(n, i, t):
+
+    C_n_i = numpy.math.factorial(n)/(numpy.math.factorial(i) * numpy.math.factorial(n - i))
+
+    return C_n_i * t ** i * (1 - t) ** (n - i)
+
 def besier_curve(points, weights=None, density=100):
-    
-    ################################################
-    def bershtein_basis(n, i, t):
-    
-        C_n_i = numpy.math.factorial(n)/(numpy.math.factorial(i) * numpy.math.factorial(n - i))
-    
-        return C_n_i * t ** i * (1 - t) ** (n - i)
-    
-    ################################################
     
     if not isinstance(points, numpy.ndarray):
         raise TypeError(f"expected points to be numpy.ndarray type, but got {type(points)}")
