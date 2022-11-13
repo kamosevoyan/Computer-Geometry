@@ -76,11 +76,13 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
         if weights.shape[0] != points.shape[0]:
             raise ValueError(f"Expectes points and weights to have sampe last shape, but got {points.shape} and {weights.shape}")
 
-
     plt.figure(figsize=(10, 10))
     plt.axis("equal")
 
     for deg in degree:
+        if points.shape < deg:
+            raise ValueError(f"Number of points should be greater or equal than degree of the spline")
+
         #Pad points insead of multiple nodes to escape zero division
         new_points  = numpy.concatenate([[points[0]]*deg, points[1:-1], [points[-1]]*deg])
         new_weights = numpy.concatenate([[weights[0]]*deg, weights[1:-1], [weights[-1]]*deg])
