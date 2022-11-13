@@ -80,7 +80,7 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
     plt.axis("equal")
 
     for deg in degree:
-        if points.shape < deg:
+        if points.shape[0] < deg:
             raise ValueError(f"Number of points should be greater or equal than degree of the spline")
 
         #Pad points insead of multiple nodes to escape zero division
