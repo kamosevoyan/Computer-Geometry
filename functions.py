@@ -27,12 +27,15 @@ def construct_curve(new_points, new_weights, nodes, degree, density):
     num = nodes.shape[0] - 2 * degree
     x = numpy.linspace(nodes[degree], nodes[-degree], num=density * num)
 
-    result = numpy.zeros((2, x.shape[0]))
+    nom = numpy.zeros((2, x.shape[0]))
+    denom = numpy.zeros(x.shape[0])
 
     for index, _ in enumerate(new_points):
-        result += new_weights[index] * new_points[index][..., None] * norm_bspline(index, degree, nodes, x)
+        temp = new_weights[index] * norm_bspline(index, degree, nodes, x)
+        nom += new_points[index][..., None] * temp
+        denom += temp
 
-    return result, num
+    return nom/denom, num
 
 def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=True, cascade=False):
 
