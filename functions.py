@@ -25,34 +25,46 @@ def norm_bspline(i, m, T, x):
 
     return (T[i+m] - T[i]) * sigma_diff(T[i:(i + m + 1)], x)
 
-def construct_curve(new_points, new_weights, nodes, degree, density):
+def rec_bspline(i, m, nodes, x):
 
-    num = nodes.shape[0] - 2 * degree
-    x = numpy.linspace(nodes[degree], nodes[-degree], num=density * num)
+    if m == 1:
+        result = numpy.zeros(x.shape[0])
+        result[(x >= nodes[i]) & (x < nodes[(i+1)])] = 1
+        return result
+
+    beta = i + m
+
+    if nodes[beta] != nodes[i+1]:
+        first = (nodes[beta]-x)/(nodes[beta]-nodes[i+1])*rec_bspline(i+1,m-1,nodes,x)
+    else:
+        first = numpy.zeros(x.shape[0])
+
+    if nodes[beta-1] != nodes[i]:
+        second = (x-nodes[i])/(nodes[beta-1]-nodes[i])*rec_bspline(i,m-1,nodes,x)
+    else:
+        second = numpy.zeros(x.shape[0])
+
+    return first + second
+
+def construct_curve(points, weights, nodes, degree, density):
+
+    num = numpy.unique(nodes).shape[0]
+    x = numpy.linspace(nodes[0], nodes[-1], num=density*num)
 
     nom = numpy.zeros((2, x.shape[0]))
     denom = numpy.zeros(x.shape[0])
 
-    for index, _ in enumerate(new_points):
-        temp = new_weights[index] * norm_bspline(index, degree, nodes, x)
-        nom += new_points[index][..., None] * temp
+    for index, _ in enumerate(points):
+        temp = weights[index] * rec_bspline(index, degree, nodes, x)
+        nom += points[index][..., None] * temp
         denom += temp
 
     return nom/denom, num
 
 def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=True, cascade=False):
 
-    if not isinstance(degree, (int, list)):
-        raise TypeError(f"Expected degree to be int or list of ints, but got {type(degree)}")
-
-    if isinstance(degree, int):
-        degree = [degree]
-
-    if (len(degree) > 1) and (nodes is not None):
-        raise NotImplementedError(f"Multiple degrees with non default nodes are not available")
-
-    if not all(isinstance(num, int) and (2 <= num) for num in degree):
-        raise ValueError(f"Expected degree to be list of integers greater or equal than 2")
+    if not isinstance(degree, int):
+        raise TypeError(f"Expected degree to be int, but got {type(degree)}")
 
     if not isinstance(split, bool):
         raise TypeError(f"Expected split to be bool, but got {type(split)}")
