@@ -122,11 +122,11 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
         for x, y in zip(X, Y):
             plt.plot(x, y, linewidth=3)
 
-        if cascade is True:
-            plt.plot(points[:, 0], points[:, 1], color="k", linewidth=0.5)
-
     else:
         plt.plot(result[0], result[1], linewidth=3)
+
+    if cascade is True:
+        plt.plot(points[:, 0], points[:, 1], color="k", linewidth=0.5)
 
     plt.scatter(points[:, 0], points[:, 1], c="r")
 
