@@ -83,6 +83,24 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
     if not ((points.ndim == 2) and (points.shape[1] == 2)):
         raise ValueError(f"Expected points shape to be [N, 2], but got {points.shape}")
 
+    if nodes is None:
+        nodes = numpy.arange(points.shape[0] + degree)
+    else:
+        if not isinstance(nodes, numpy.ndarray):
+            raise TypeError(f"Expected nodes to be numpy array, but got {type(nodes)}")
+
+        if nodes.ndim != 1:
+            raise ValueError(f"Expected nodes shape to be [N], but got {nodes.shape}")
+
+        if not numpy.all(nodes[1:] >= nodes[:-1]):
+            raise ValueError("Expected nodes to be non strictly increasing sequence")
+
+    if  not (2 <= degree <= points.shape[0]):
+        raise ValueError(f"The degree of the spline must be in range [2, points.shape[0]]")
+
+    if nodes.shape[0] != points.shape[0] + degree:
+        raise ValueError(f"Expected node.shape = points.shape + degree")
+
     if weights is None:
         weights = numpy.ones(points.shape[0])
     else:
