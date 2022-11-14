@@ -1,6 +1,9 @@
 import numpy
 import matplotlib.pyplot as plt
 
+#This is set for endge cases when 0 / 0 occures. In future, need to be solved.
+numpy.seterr(invalid='ignore')
+
 def sigma(m, r, t=0):
 
     zeros = numpy.zeros(r.shape[0])
