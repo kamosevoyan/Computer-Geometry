@@ -29,7 +29,7 @@ def rec_bspline(i, m, nodes, x):
 
     if m == 1:
         result = numpy.zeros(x.shape[0])
-        result[(x >= nodes[i]) & (x < nodes[(i+1)])] = 1
+        result[(x >= nodes[i]) & (x <= nodes[(i+1)])] = 1
         return result
 
     beta = i + m
@@ -75,7 +75,7 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
     if not isinstance(density, int):
         raise TypeError(f"Expected density to be int, but got {type(density)}")
     if not (5 <= density <= 1000):
-        raise ValueError(f"Expected density to be in range [20, 1000], but got {density}")
+        raise ValueError(f"Expected density to be in range [5, 1000], but got {density}")
 
     if not isinstance(points, numpy.ndarray):
         raise TypeError(f"Expected points to be numpy array, but got {type(points)}")
@@ -112,54 +112,23 @@ def nurbs_curve(points, degree, nodes=None, weights=None, density=100, split=Tru
     plt.figure(figsize=(10, 10))
     plt.axis("equal")
 
-    for deg in degree:
-        if points.shape[0] < deg:
-            raise ValueError(f"Number of points should be greater or equal than degree of the spline")
+    result, num = construct_curve(points, weights, nodes, degree, density)
 
-        #Pad points insead of multiple nodes to escape zero division
-        new_points  = numpy.concatenate([[points[0]]*deg, points[1:-1], [points[-1]]*deg])
-        new_weights = numpy.concatenate([[weights[0]]*deg, weights[1:-1], [weights[-1]]*deg])
+    if split is True:
 
-        if nodes is None:
-            new_nodes = numpy.arange(new_points.shape[0]+deg)
-        else:
-            if not isinstance(nodes, numpy.ndarray):
-                raise TypeError(f"Expected nodes to be numpy array, but got {type(nodes)}")
-            if nodes.ndim != 1:
-                raise ValueError(f"Expected nodes shape to be [N], but got {nodes.shape}")
-            if not numpy.all(nodes[1:] > nodes[:-1]):
-                raise ValueError("Expected nodes to be non strict increasing sequence")
+        X = numpy.split(result[0], num)
+        Y = numpy.split(result[1], num)
 
-            left_count = deg // 2
-            right_count = deg // 2 + (deg % 2)
+        for x, y in zip(X, Y):
+            plt.plot(x, y, linewidth=3)
 
-            left_pad_nodes = numpy.linspace(nodes[0]-1, nodes[0], deg+left_count)
-            right_pad_nodes = numpy.linspace(nodes[-1], nodes[-1]+1, deg+right_count)
+        if cascade is True:
+            plt.plot(points[:, 0], points[:, 1], color="k", linewidth=0.5)
 
-            new_nodes = numpy.concatenate([left_pad_nodes, nodes[1:-1], right_pad_nodes])
+    else:
+        plt.plot(result[0], result[1], linewidth=3)
 
-            if new_nodes.shape[0] != new_points.shape[0] + deg:
-                raise ValueError(f"Expected node.shape = points.shape + degree")
-
-        result, num = construct_curve(new_points, new_weights, new_nodes, deg, density)
-        #Define figure to plot to
-
-        if split is True:
-
-            X = numpy.split(result[0], num)
-            Y = numpy.split(result[1], num)
-
-            for x, y in zip(X, Y):
-                plt.plot(x, y, linewidth=3)
-
-            if cascade is True:
-                plt.plot(points[:, 0], points[:, 1], color="k", linewidth=0.5)
-
-        else:
-            plt.plot(result[0], result[1], label=f"{deg}", linewidth=3)
-            plt.legend()
-
-        plt.scatter(points[:, 0], points[:, 1], c="r")
+    plt.scatter(points[:, 0], points[:, 1], c="r")
 
     plt.show()
 
