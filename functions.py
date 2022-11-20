@@ -4,6 +4,31 @@ import matplotlib.pyplot as plt
 #This is set for endge cases when 0 / 0 occures. In future, need to be solved.
 numpy.seterr(invalid='ignore')
 
+def get_intersections(points, i, j, L):
+
+    b =  (points[i][1]-points[j][1])/(points[j][0]-L)
+    a = (1/(points[j][0]-L)-1/(points[i][0]-L))*0.5
+    c = (points[i][1]-points[j][1])**2/(points[j][0]-L)*0.5 + (points[j][0]-points[i][0])/2
+    D = b**2 - 4*a*c
+
+    if numpy.isclose(a, 0):
+        t = -c/b
+        y = t + points[i][1]
+        x = (y - points[i][1])**2*0.5/(points[i][0]-L)+0.5*(L+points[i][0])
+
+        return ((x, y), )
+
+    t1 = 0.5/a*(-b - numpy.sqrt(D))
+    t2 = 0.5/a*(-b + numpy.sqrt(D))
+
+    y1 = t1 + points[i][1]
+    y2 = t2 + points[i][1]
+
+    x1 = (y1 - points[i][1])**2*0.5/(points[i][0]-L)+0.5*(L+points[i][0])
+    x2 = (y2 - points[i][1])**2*0.5/(points[i][0]-L)+0.5*(L+points[i][0])
+
+    return (x1, y1), (x2, y2)
+
 def sigma(m, r, t=0):
 
     zeros = numpy.zeros(r.shape[0])
