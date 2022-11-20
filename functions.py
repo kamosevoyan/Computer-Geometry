@@ -29,6 +29,93 @@ def get_intersections(points, i, j, L):
 
     return (x1, y1), (x2, y2)
 
+def voronoi_diagram(points, min_y=-2, max_y=2, epsilon=1e-3):
+
+    if not isinstance(points, numpy.ndarray):
+        raise TypeError(f"Expected points to be numpy array, not got {type(points)}")
+
+    if not ((points.ndim == 2) and (points.shape[1] == 2)):
+        raise ValueError(f"Expetced points to have shape [N, 2], but got {points.shape}")
+
+    y = numpy.linspace(min_y, max_y, 100_000)
+
+    diagram_points = []
+
+    #rescale points for less computations
+    points = points /  numpy.abs(points).max()
+
+    for L in numpy.linspace(points[:,0].min(), 10,  10000):
+
+        crop_indices = []
+        POINTS = []
+        X = []
+
+        #get those points that are on the right side of the sliding line
+        available_indices = numpy.where(L > points[:,0])[0]
+
+        #if there are not points on the right side of the line, skip the iteration
+        if available_indices.size <= 1:
+            continue
+
+        #get all couples of parabols that intersect
+        couples =  numpy.array([[i, j] for j in range(available_indices.shape[0]) for i in range(j)])
+
+        #iterate over all couples
+        for first, second in available_indices[couples]:
+
+            #get coordinates of intersection of given two parabols
+            result = get_intersections(points, first, second, L)
+
+            #if the points are inside the given screen range
+            if (min_y <= result[0][1] <= max_y) and (min_y <= result[0][0] <= max_y):
+                POINTS.append(result[0])
+                #get those indices whose values are close to the y coordinate of given intersection point
+                crop_indices.append(numpy.where(numpy.abs(y - result[0][1]) <= epsilon)[0])
+
+            #if the result is one point, continue
+            if len(result) == 1:
+                continue
+
+            #the same as in the previous case
+            if (min_y <= result[1][1] <= max_y) and (min_y <= result[1][0] <= max_y):
+                POINTS.append(result[1])
+                crop_indices.append(numpy.where(numpy.abs(y - result[1][1]) <= epsilon)[0])
+
+        #if there are not intersection points, continue
+        if len(POINTS) == 0:
+            continue
+
+        #for each available point, get x values of parabola
+        for index in available_indices:
+            x = (y - points[index][1])**2/(2*(points[index][0]-L)) + (L+points[index][0])/2
+            X.append(x)
+
+        crop_indices = numpy.array(crop_indices)
+
+        if crop_indices.dtype == object:
+            continue
+
+        POINTS = numpy.array(POINTS)
+        X = numpy.array(X)
+
+        #these try-catch statements are made because of numeric error, needs to be solved with more precise approach
+        try:
+            available_plot_indices = ~numpy.any((POINTS[:, 0][None, :, None] > X[:, crop_indices]).sum(axis=-1) == 0, axis=0)
+        except Exception as e:
+            continue
+
+        if available_plot_indices.size == 0:
+            continue
+
+        try:
+            resulting_points = POINTS[available_plot_indices]
+        except:
+            pass
+
+        diagram_points.extend(resulting_points)
+
+    return numpy.stack(diagram_points)
+
 def sigma(m, r, t=0):
 
     zeros = numpy.zeros(r.shape[0])
