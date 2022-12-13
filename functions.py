@@ -1,5 +1,6 @@
 import numpy
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 #This is set for endge cases when 0 / 0 occures. In future, need to be solved.
 numpy.seterr(invalid='ignore')
@@ -42,9 +43,10 @@ def voronoi_diagram(points, min_y=-2, max_y=2, epsilon=1e-3):
     diagram_points = []
 
     #rescale points for less computations
-    points = points /  numpy.abs(points).max()
+    scale = numpy.abs(points).max()
+    points = points / scale
 
-    for L in numpy.linspace(points[:,0].min(), 10,  10000):
+    for L in tqdm(numpy.linspace(points[:,0].min(), 10,  10000)):
 
         crop_indices = []
         POINTS = []
@@ -113,8 +115,50 @@ def voronoi_diagram(points, min_y=-2, max_y=2, epsilon=1e-3):
             pass
 
         diagram_points.extend(resulting_points)
+    
+    
+    couples =  numpy.array([[i, j] for j in range(points.shape[0]) for i in range(j)])
+    neighbours = [[] for i in range(points.shape[0])]
 
-    return numpy.stack(diagram_points)
+    for (first, second) in couple_indices:
+
+        alpha = -numpy.arccos((points[second, 0] - points[first, 0])/ \
+        numpy.sqrt((points[first, 0] - points[second, 0])**2 + (points[first, 1] - points[second, 1])**2))
+
+        if points[first, 1] < points[second, 1]:
+            alpha *= -1
+
+        rot = numpy.array([
+        [numpy.cos(alpha), -numpy.sin(alpha)],
+        [numpy.sin(alpha), numpy.cos(alpha)]
+        ])
+
+        result_rot = result - points[first]
+        result_rot = result_rot @ rot
+        result_rot += points[second]
+
+        points_rot = points - points[first]
+        points_rot = points_rot @ rot
+        points_rot += points[second]
+
+        middle_x = 0.5 * (points_rot[first, 0] + points_rot[second, 0])
+
+        a = (numpy.abs(result_rot[numpy.abs(result_rot[:, 1] - points_rot[second, 1]) <= eps][:, 0] - middle_x) <= eps).sum()
+        b = (numpy.abs(result_rot[numpy.abs(result_rot[:, 0] - middle_x) <= eps][:, 1] - points_rot[first, 1]) <= eps).sum() 
+
+        tmp = result_rot[numpy.abs(result_rot[:, 1] - points_rot[second, 1]) <= eps]
+        jmp = tmp[numpy.where(numpy.abs(result_rot[numpy.abs(result_rot[:, 1] - points_rot[second, 1]) <= eps][:, 0] - middle_x) > 10*eps)]
+
+        min_ = min(points_rot[first, 0], points_rot[second, 0])
+        max_ = max(points_rot[first, 0], points_rot[second, 0])
+
+        jmp = jmp[jmp[:, 0] > min_]
+        jmp = jmp[jmp[:, 0] < max_]
+
+        if a and (jmp.shape[0] == 0):
+            neighbours[first].append(second)
+    
+    return numpy.stack(diagram_points) * scale, neighbours
 
 def sigma(m, r, t=0):
 
